@@ -1,0 +1,148 @@
+% --------------------------------------------------------------
+% This is all preamble stuff that you don't have to worry about.
+% Head down to where it says "Start here"
+% --------------------------------------------------------------
+ 
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry} 
+\usepackage{amsmath,amsthm,amssymb,scrextend}
+\usepackage{fancyhdr}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{color}
+\usepackage{graphicx}
+\pagestyle{fancy}
+
+ 
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\I}{\mathbb{I}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\renewcommand{\qed}{\hfill$\blacksquare$}
+\let\newproof\proof
+\renewenvironment{proof}{\begin{addmargin}[1em]{0em}\begin{newproof}}{\end{newproof}\end{addmargin}\qed}
+% \newcommand{\expl}[1]{\text{\hfill[#1]}$}
+ 
+\newenvironment{theorem}[2][Theorem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{lemma}[2][Lemma]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{problem}[2][Problem]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{exercise}[2][Exercise]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{reflection}[2][Reflection]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{proposition}[2][Proposition]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+\newenvironment{corollary}[2][Corollary]{\begin{trivlist}
+\item[\hskip \labelsep {\bfseries #1}\hskip \labelsep {\bfseries #2.}]}{\end{trivlist}}
+ 
+\begin{document}
+ 
+% --------------------------------------------------------------
+%                         Start here
+% --------------------------------------------------------------
+
+\title{COMP3821 - Assignment 4} 
+\lhead{COMP3821 - Assignment 4}
+\chead{Jeffrey Shen - z3372482}
+\rhead{\today}
+ 
+% \maketitle
+\begin{problem}{1: Turn the problem into a bipartite graph and perform max matching} 
+If we consider the males as the left nodes of a bipartite graph and the females as the right nodes. We can then construct the graph in such a way that an edge only exists between a male and a female node if they both like each other.\\
+
+Once this is done we can then run the maxflow algorithm by making a super source connect to all the male nodes and a super drain connect to all the female nodes. On all these edges we force each edge to have a capacity of 1 since each female and male is allowed to go on one date.\\
+
+After performing max flow, the saturated edges in our graph will be the maximum amount of matches possible in the bipartite graph which corresponds to the maximum amount of dates we can form.
+
+\end{problem}
+
+\begin{problem}{2: Find the min cut of the network where $c_{ij}$ s this the capacity}
+If we represent the computer network as a flow network where the capacity of each uni-directional cable is its $C_{ij}$. We can find the min cut of the flow network by first creating a super source which joins to the set $P$ of attacking computers with edges of infinite capacity and similarly creating a super sink which all nodes in $Q$ connect to. \\
+
+
+Performing the max flow algorithm, the saturated edges which are the edges between our source and sink are the minimal amount of edges we need to cut to disconnect the 2 halves. This is because the saturated edges of our flow network are in fact also the edges which form a min cut between the vertices which are reachable from the source and the set of vertices reachable from the drain. This is the exact property we desire in minimizing the amount of cutting we have to do to isolate the source and the sink.
+
+\begin{figure}[H]
+ \centering
+  \includegraphics[width=0.5\textwidth]{network}
+  \caption{An example flow network representation of a hypothetical network. Here, P = \{P1,P2\} and Q = \{Q1,Q2\}. We join these nodes to a respective source and sink. Each edge in the network corresponds to the cost in cutting it, which in the figure is represented by a cost function $C(i,j) = C_{ij}$.}
+\end{figure}
+\end{problem}
+
+\begin{problem}{3: Use the shortest path from source to drain as our augmenting path}\textbf{(Edmond-Karp)}
+
+For a single source flow graph (we can always transform multi source/sink graphs into a single source/sink graphs with a super source/sink) with $V$ vertices and $E$ edges,  if we find the max flow by picking the shortest path as our augmenting path we can find the min cut (which is equivalent to the maxflow) of the network in the worst case in $O(|V||E|^2)$ many steps\\
+
+
+\begin{proof}
+Intuitively, if at every single step of the algorithm we pick the shortest path and we "saturate" the smallest capacity edge, then the distance to a vertex $u$ from our source either remains the same or increases. \\
+
+The second key insight is that if we include an edge joining verticeshttps://preview.overleaf.com/public/snycdhsrmdpt/images/b65a5af35eab472decfe6f3a543e223ca77287cd.jpeg $(v,u)$ which has already been saturated once again into our augmenting path (originally the edge was $(u,v)$), the distance to vertex $u$ has at the very least increased by 2 edges and thus the length of our overall path has increased (See the lemma below).\\ 
+
+Lemma: Let us say when $(u,v)$ was first saturated the number of edges to get to $u$ was $k$. Therefore the number of edges to get to $v$ originally was $k+1$. Suppose that after some iterations $(v,u)$ now forms part of the augmenting path. Since we know that the path to get to $v$ was $k+1$ edges then it follows that the number of edges to get to $u$ is now at the very least $k+2$. 
+
+
+With the above 2 properties in mind, since the maximum number of times an edge can be saturated is $|V|/2$ for a given edge and there are $2|E|$ many edges that can appear in our residual graph. The total complexity of the algorithm is then $O(|V||E|\times |E|)$. Here the extra $O(|E|)$ term comes form finding the shortest path using BFS which in the worst case is $O(|E|)$. 
+
+
+\end{proof}
+
+
+\textbf{b. Min cut:}\\
+
+Yes, the min cut is not necessarily unique:
+
+\begin{figure}[H]
+ \centering
+  \includegraphics[width=0.8\textwidth]{mincut}
+\end{figure}
+In the above flow network we see taking that the grouping of the sets: $(\{S,1\}, \{T,2\})$ and $(\{S\}, \{T,1,2\})$ both give us the min cut of the flow network (with capacity 7).
+\end{problem}
+
+
+
+
+\begin{problem}{4: Maximize the amount of students able to attend classes}
+
+We make the most money by enrolling the maximum amount of students. Therefore letting the classes be one half of the bipartite graph and the students be the other half, the max flow throught this graph will be the maximum distribution of students we can enrol in classes.\\
+
+We join the 2 halves of the graph by connecting all classes that the student wishes to enrol with an edge with a capacity 1 (since a student can only enrol once). We then represent that the classes can only have a certain number of students by setting the edge from a super source to a given class node with a capacity equal to the classes capacity. Furthermore, since each student can only be enrolled in 5 classes we let this be the capacity of an edge going from the student node to a super sink.\\
+
+After finding the max flow, the saturated edges joining classes to students will be the final enrolment which maximizes the number of students enrolled in classes.
+\begin{figure}[H]
+ \centering
+  \includegraphics[width=0.8\textwidth]{university}
+  \caption{The bipartite graph for Q4}
+\end{figure}
+
+
+\end{problem}
+
+\begin{problem}{5: The books and students form 2 sides of a bipartite graph}
+We adopt a similar strategy to Q4 here by letting the different books be the left hand side nodes and the student be the right hand side nodes of a bipartite graph. The key difference in this question is that we must impose the constraint that there are only 3 copies of each book and that each student can borrow at most 10 books. Furthermore, the capacities joining each book's vertex to a student is dependent on how many copies the student requires based on their list. After performing the max flow algorithm, the flow of the edges will be our distribution of books.
+
+\begin{figure}[H]
+ \centering
+  \includegraphics[width=0.8\textwidth]{library}
+  \caption{The bipartite graph for Q5}
+\end{figure}
+
+
+\end{problem}
+
+\begin{problem}{6: Match patients to hospitals using max flow}
+In order to match the patients with the above constraints, $P$ and $H$ as a set of nodes in a bipartite graph. We represent $H_p$ as a set of edges joining node $p$ to the respective hopsitals in $H$ with a capacity of 1 (since a person can go to a hospital only once). Since each hospital has a capacity, we represent this in the graph as the capacity of a given hospital node to a super sink, this constrains the number of paths which can flow through the hospital. Furthermore, in order to run the Edmond - Karp algorithm we must connect each patient node to a super source, and since each patient can only go to once hospital each of these edges will have capacity 1.
+
+After running max flow, if each patient has a saturated edge pointing to a hospital then we have a valid solution and return all these saturated edges. Otherwise, it is not possible to fit all the patients in a hospital.
+\begin{figure}[H]
+ \centering
+  \includegraphics[width=0.8\textwidth]{hospital}
+  \caption{An example  bipartite graph for Q6}
+\end{figure}
+\end{problem}
+
+\end{document}
